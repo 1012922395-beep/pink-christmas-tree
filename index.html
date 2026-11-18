@@ -17,9 +17,9 @@
   html, body{ height: 100%; margin: 0; }
   body{
     background:
-      radial-gradient(115% 85% at 64% 18%, rgba(255, 122, 172, .22), rgba(255, 122, 172, 0) 62%),
-      radial-gradient(75% 65% at 18% 88%, rgba(255, 66, 140, .17), rgba(255, 66, 140, 0) 68%),
-      radial-gradient(145% 120% at 50% 46%, #3a1130 0%, #220a1c 48%, #100410 100%);
+      radial-gradient(115% 85% at 64% 18%, rgba(255, 108, 164, .18), rgba(255, 108, 164, 0) 62%),
+      radial-gradient(75% 65% at 18% 88%, rgba(255, 58, 132, .14), rgba(255, 58, 132, 0) 68%),
+      radial-gradient(145% 120% at 50% 46%, #2e0b28 0%, #1a0618 48%, #0a0210 100%);
     overflow: hidden;
     font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
   }
@@ -35,14 +35,14 @@
     position: fixed;
     left: clamp(24px, 6.4vw, 108px);
     bottom: clamp(44px, 11vh, 132px);
-    max-width: min(46ch, 40vw);
+    max-width: min(46ch, 49vw);
     pointer-events: none;
   }
   .copy h1{
     margin: 0 0 .18em;
     font-family: "Great Vibes", "Segoe Script", cursive;
     font-weight: 400;
-    font-size: clamp(42px, 5.4vw, 96px);
+    font-size: clamp(42px, 5vw, 88px);
     line-height: 1.04;
     color: var(--ink);
     text-shadow: 0 0 26px rgba(255, 92, 152, .55), 0 0 70px rgba(255, 92, 152, .28), 0 2px 10px rgba(0, 0, 0, .35);
@@ -59,11 +59,15 @@
     letter-spacing: .12em;
     color: var(--ink-dim);
   }
-  .copy .meta{
-    margin-top: 8px;
-    font-size: 11px;
-    letter-spacing: .14em;
-    color: rgba(255, 208, 227, .44);
+  .copy .sign{
+    margin-top: 16px;
+    font-size: 11.5px;
+    letter-spacing: .2em;
+    color: rgba(255, 214, 232, .68);
+  }
+  .copy .sign em{
+    font-style: normal;
+    color: rgba(255, 240, 246, .86);
   }
 
   .controls{
@@ -104,7 +108,7 @@
     .copy h1{ font-size: clamp(28px, 9vw, 44px); }
     .copy .rule{ margin: 12px auto 10px; width: 40px; }
     .copy p{ font-size: 12px; line-height: 1.95; letter-spacing: .01em; }
-    .copy .meta{ font-size: 10.5px; margin-top: 6px; letter-spacing: .1em; }
+    .copy .sign{ font-size: 10.5px; margin-top: 12px; letter-spacing: .16em; }
     .state{ display: none; }
   }
   /* 横屏手机等矮屏：文字回到左下角，避免压住树顶 */
@@ -113,7 +117,7 @@
     .copy h1{ font-size: clamp(24px, 4.6vw, 42px); }
     .copy .rule{ margin: 10px 0 9px; width: 34px; }
     .copy p{ font-size: 11px; line-height: 1.7; letter-spacing: .03em; }
-    .copy .meta{ font-size: 10px; margin-top: 5px; }
+    .copy .sign{ font-size: 10px; margin-top: 10px; letter-spacing: .14em; }
     .controls{ bottom: 4vh; }
   }
   @media (prefers-reduced-motion: reduce){
@@ -129,7 +133,7 @@
   <h1>Merry Christmas</h1>
   <div class="rule" aria-hidden="true"></div>
   <p class="lead">把这一年的温柔，收进树梢的光点里。</p>
-  <p class="meta">自动旋转 · 无需摄像头 · 拖动可换视角</p>
+  <p class="sign">制作人 · <em>祖美森</em></p>
 </div>
 
 <div class="controls">
@@ -186,10 +190,10 @@
     "varying vec3 vColor;",
     "varying float vTw;",
     "void main(){",
-    "  float tw = 0.72 + 0.28 * sin(uTime * 1.45 + aPhase);",
+    "  float tw = 0.86 + 0.14 * sin(uTime * 1.45 + aPhase);",
     "  float band = (position.y - uSweep) / 0.42;",
     "  float sweep = exp(-band * band);",
-    "  vTw = tw + sweep * 0.68;",
+    "  vTw = tw + sweep * 0.5;",
     "  vColor = aColor;",
     "  vec4 mv = modelViewMatrix * vec4(position, 1.0);",
     "  float px = aSize * uSizeScale * uPointFactor / max(0.001, -mv.z);",
@@ -233,7 +237,7 @@
   /* ---------- 粒子树 ---------- */
   var champagne = new THREE.Color().setHSL(0.085, 0.62, 0.8);
 
-  var count = isNarrow ? 11000 : 18000;
+  var count = isNarrow ? 13000 : 21000;
 
   function buildTree() {
     var pos = new Float32Array(count * 3);
@@ -250,9 +254,9 @@
       var tierScale = 0.84 + 0.16 * Math.cos(tierT * Math.PI);
 
       // 六成粒子沿螺旋光带排布，其余填进树身形成体积
-      var garland = Math.random() < 0.62;
+      var garland = Math.random() < 0.55;
       var ang = t * TURNS * Math.PI * 2 + (Math.random() - 0.5) * (garland ? 0.55 : 6.0);
-      var radiusFactor = garland ? 0.95 + Math.random() * 0.06 : 0.45 + Math.random() * 0.55;
+      var radiusFactor = garland ? 0.95 + Math.random() * 0.06 : 0.4 + Math.random() * 0.6;
 
       var r = BASE_R * Math.pow(1 - t, 0.92) * tierScale * radiusFactor;
       var y = 0.08 + t * (H - 0.08) + (Math.random() - 0.5) * 0.04;
@@ -264,14 +268,14 @@
       if (Math.random() < 0.055) {
         tmp.copy(champagne);
       } else {
-        tmp.setHSL(0.925 + (Math.random() - 0.5) * 0.04, 0.62 + Math.random() * 0.3, 0.66 + t * 0.12 + Math.random() * 0.08);
+        tmp.setHSL(0.935 + (Math.random() - 0.5) * 0.02, 0.86 + Math.random() * 0.12, 0.5 + t * 0.08 + Math.random() * 0.05);
       }
       colArr[i * 3] = tmp.r;
       colArr[i * 3 + 1] = tmp.g;
       colArr[i * 3 + 2] = tmp.b;
 
-      var big = Math.random() < 0.045;
-      sizes[i] = big ? 0.028 + Math.random() * 0.016 : 0.011 + Math.random() * 0.014;
+      var big = Math.random() < 0.05;
+      sizes[i] = big ? 0.058 + Math.random() * 0.03 : 0.026 + Math.random() * 0.022;
       phases[i] = Math.random() * Math.PI * 2;
     }
 
@@ -284,8 +288,8 @@
   }
 
   var treeGeo = buildTree();
-  var coreMat = makePointsMaterial(0.8, 2.7, 1.0);
-  var haloMat = makePointsMaterial(0.1, 1.35, 2.7);
+  var coreMat = makePointsMaterial(0.95, 2.2, 1.0);
+  var haloMat = makePointsMaterial(0.07, 1.4, 2.6);
   var core = new THREE.Points(treeGeo, coreMat);
   var halo = new THREE.Points(treeGeo, haloMat);
   halo.renderOrder = 1;
@@ -361,7 +365,7 @@
     new THREE.PlaneGeometry(12, 12),
     new THREE.MeshBasicMaterial({
       map: radialTexture("rgba(255,120,170,0.45)", "rgba(255,120,170,0)"),
-      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.2
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.16
     })
   );
   glow.rotation.x = -Math.PI / 2;
@@ -509,10 +513,10 @@
 
     // 宽屏把树放到画面右侧给标题留版面；竖屏缩小让出顶部；按视口高度反推相机距离，保证任何比例都成立
     var wideLayout = w > 900 || h < 561;
-    var fit = wideLayout ? 0.7 : 0.56;
+    var fit = wideLayout ? 0.7 : 0.5;
     var dist = (H / fit) / (2 * Math.tan((FOV * Math.PI) / 360));
-    camera.position.set(0, wideLayout ? 2.78 : 3.2, dist);
-    lookAt.set(wideLayout ? -1.42 : 0, wideLayout ? 2.5 : 4.25, 0);
+    camera.position.set(0, wideLayout ? 2.78 : 3.3, dist);
+    lookAt.set(wideLayout ? -1.42 : 0, wideLayout ? 2.5 : 3.72, 0);
     camera.lookAt(lookAt);
 
     var pf = h / (2 * Math.tan((FOV * Math.PI) / 360));
@@ -620,7 +624,7 @@
     var pulse = 1 + 0.09 * Math.sin(elapsed * 1.1);
     star.scale.set(1.2 * pulse, 1.2 * pulse, 1);
     starMat.opacity = 0.78 + 0.16 * Math.sin(elapsed * 0.85 + 0.6);
-    glow.material.opacity = 0.18 + 0.05 * Math.sin(elapsed * 0.7);
+    glow.material.opacity = 0.13 + 0.035 * Math.sin(elapsed * 0.7);
 
     renderer.render(scene, camera);
   }
