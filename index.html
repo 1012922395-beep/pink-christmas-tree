@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>粉色粒子圣诞树</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 6l7 15 15 7-15 7-7 15-7-15-15-7 15-7z' fill='%23ff8fc0'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Great+Vibes&family=Noto+Serif+SC:wght@300;500;600&display=swap">
+<style>
+  :root{
+    --ink: #ffe9f3;
+    --ink-dim: rgba(255, 208, 227, .66);
+    --glow: rgba(255, 92, 152, .5);
+    --line: rgba(255, 176, 205, .28);
+  }
+  *{ box-sizing: border-box; }
+  html, body{ height: 100%; margin: 0; }
+  body{
+    background:
+      radial-gradient(115% 85% at 64% 18%, rgba(255, 122, 172, .22), rgba(255, 122, 172, 0) 62%),
+      radial-gradient(75% 65% at 18% 88%, rgba(255, 66, 140, .17), rgba(255, 66, 140, 0) 68%),
+      radial-gradient(145% 120% at 50% 46%, #3a1130 0%, #220a1c 48%, #100410 100%);
+    overflow: hidden;
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  }
+  #stage{ position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* 暗角，让视线收拢到树身 */
+  .vignette{
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 50%, rgba(8, 2, 8, 0) 42%, rgba(8, 2, 8, .58) 100%);
+  }
+
+  .copy{
+    position: fixed;
+    left: clamp(24px, 6.4vw, 108px);
+    bottom: clamp(44px, 11vh, 132px);
+    max-width: min(46ch, 40vw);
+    pointer-events: none;
+  }
+  .copy h1{
+    margin: 0 0 .18em;
+    font-family: "Great Vibes", "Segoe Script", cursive;
+    font-weight: 400;
+    font-size: clamp(42px, 5.4vw, 96px);
+    line-height: 1.04;
+    color: var(--ink);
+    text-shadow: 0 0 26px rgba(255, 92, 152, .55), 0 0 70px rgba(255, 92, 152, .28), 0 2px 10px rgba(0, 0, 0, .35);
+  }
+  .copy .rule{
+    width: 54px; height: 1px; margin: 18px 0 16px;
+    background: linear-gradient(90deg, var(--line), rgba(255, 176, 205, 0));
+  }
+  .copy p{
+    margin: 0;
+    font-size: clamp(13px, 1.05vw, 15px);
+    font-weight: 300;
+    line-height: 2;
+    letter-spacing: .12em;
+    color: var(--ink-dim);
+  }
+  .copy .meta{
+    margin-top: 8px;
+    font-size: 11px;
+    letter-spacing: .14em;
+    color: rgba(255, 208, 227, .44);
+  }
+
+  .controls{
+    position: fixed; right: clamp(18px, 3vw, 44px); bottom: clamp(22px, 4.2vh, 46px);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .state{
+    font-size: 11px; letter-spacing: .16em; color: rgba(255, 208, 227, .5);
+    font-weight: 300;
+  }
+  #toggle{
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid rgba(255, 176, 205, .26);
+    background: rgba(255, 130, 175, .08);
+    color: var(--ink);
+    cursor: pointer;
+    display: grid; place-items: center;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    transition: background .25s ease, border-color .25s ease, transform .25s ease;
+  }
+  #toggle:hover{ background: rgba(255, 130, 175, .18); border-color: rgba(255, 176, 205, .48); }
+  #toggle:active{ transform: scale(.94); }
+  #toggle:focus-visible{ outline: 1px solid rgba(255, 200, 220, .8); outline-offset: 3px; }
+  #toggle svg{ width: 14px; height: 14px; }
+
+  .fallback{
+    position: fixed; inset: 0; display: none; place-items: center;
+    padding: 8vw; text-align: center; line-height: 2;
+    font-size: 14px; color: var(--ink-dim);
+  }
+
+  @media (max-width: 900px) and (min-height: 561px){
+    .copy{
+      left: 50%; transform: translateX(-50%);
+      bottom: auto; top: 5vh;
+      max-width: 86vw; text-align: center;
+    }
+    .copy h1{ font-size: clamp(28px, 9vw, 44px); }
+    .copy .rule{ margin: 12px auto 10px; width: 40px; }
+    .copy p{ font-size: 12px; line-height: 1.95; letter-spacing: .01em; }
+    .copy .meta{ font-size: 10.5px; margin-top: 6px; letter-spacing: .1em; }
+    .state{ display: none; }
+  }
+  /* 横屏手机等矮屏：文字回到左下角，避免压住树顶 */
+  @media (max-height: 560px){
+    .copy{ left: 5vw; bottom: 8vh; max-width: 46vw; }
+    .copy h1{ font-size: clamp(24px, 4.6vw, 42px); }
+    .copy .rule{ margin: 10px 0 9px; width: 34px; }
+    .copy p{ font-size: 11px; line-height: 1.7; letter-spacing: .03em; }
+    .copy .meta{ font-size: 10px; margin-top: 5px; }
+    .controls{ bottom: 4vh; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .copy h1{ text-shadow: 0 0 20px rgba(255, 92, 152, .4); }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="copy">
+  <h1>Merry Christmas</h1>
+  <div class="rule" aria-hidden="true"></div>
+  <p class="lead">把这一年的温柔，收进树梢的光点里。</p>
+  <p class="meta">自动旋转 · 无需摄像头 · 拖动可换视角</p>
+</div>
+
+<div class="controls">
+  <span class="state" id="state">自动旋转中</span>
+  <button id="toggle" type="button" aria-label="暂停旋转" aria-pressed="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path id="icon-path" d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor"/></svg>
+  </button>
+</div>
+
+<div class="fallback" id="fallback">这台设备的浏览器没能启动 WebGL，换用 Chrome 或 Edge 新版即可看到这棵树。</div>
+
+<script src="https://fastly.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var canvas = document.getElementById("stage");
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var isNarrow = window.innerWidth < 720;
+
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+  } catch (e) {
+    document.getElementById("fallback").style.display = "grid";
+    return;
+  }
+  renderer.setClearAlpha(0);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x180614, 0.028);
+
+  var FOV = 38;
+  var camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
+  var lookAt = new THREE.Vector3(0, 2.6, 0);
+
+  var H = 5.6;          // 树高
+  var BASE_R = 2.02;    // 底面半径
+  var TURNS = 31;       // 螺旋匝数，决定光带密度
+
+  var root = new THREE.Group();
+  scene.add(root);
+
+  /* ---------- 光点贴图与材质 ---------- */
+  var VS = [
+    "attribute float aSize;",
+    "attribute vec3 aColor;",
+    "attribute float aPhase;",
+    "uniform float uTime;",
+    "uniform float uPointFactor;",
+    "uniform float uSizeScale;",
+    "uniform float uSweep;",
+    "varying vec3 vColor;",
+    "varying float vTw;",
+    "void main(){",
+    "  float tw = 0.72 + 0.28 * sin(uTime * 1.45 + aPhase);",
+    "  float band = (position.y - uSweep) / 0.42;",
+    "  float sweep = exp(-band * band);",
+    "  vTw = tw + sweep * 0.68;",
+    "  vColor = aColor;",
+    "  vec4 mv = modelViewMatrix * vec4(position, 1.0);",
+    "  float px = aSize * uSizeScale * uPointFactor / max(0.001, -mv.z);",
+    "  gl_PointSize = px * (1.0 + sweep * 0.45);",
+    "  gl_Position = projectionMatrix * mv;",
+    "}"
+  ].join("\n");
+
+  var FS = [
+    "uniform float uOpacity;",
+    "uniform float uFalloff;",
+    "varying vec3 vColor;",
+    "varying float vTw;",
+    "void main(){",
+    "  vec2 c = gl_PointCoord - vec2(0.5);",
+    "  float d = length(c) * 2.0;",
+    "  if (d > 1.0) discard;",
+    "  float a = pow(1.0 - d, uFalloff);",
+    "  gl_FragColor = vec4(vColor, a * uOpacity * vTw);",
+    "}"
+  ].join("\n");
+
+  function makePointsMaterial(opacity, falloff, scale) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uPointFactor: { value: 1000 },
+        uSizeScale: { value: scale },
+        uOpacity: { value: opacity },
+        uFalloff: { value: falloff },
+        uSweep: { value: -100 }
+      },
+      vertexShader: VS,
+      fragmentShader: FS,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+  }
+
+  /* ---------- 粒子树 ---------- */
+  var champagne = new THREE.Color().setHSL(0.085, 0.62, 0.8);
+
+  var count = isNarrow ? 11000 : 18000;
+
+  function buildTree() {
+    var pos = new Float32Array(count * 3);
+    var colArr = new Float32Array(count * 3);
+    var sizes = new Float32Array(count);
+    var phases = new Float32Array(count);
+    var tmp = new THREE.Color();
+    var tiers = 9;
+
+    for (var i = 0; i < count; i++) {
+      // 面积均匀取样：底部更密，符合锥体表面积分布
+      var t = 1 - Math.sqrt(Math.random());
+      var tierT = (t * tiers) % 1;
+      var tierScale = 0.84 + 0.16 * Math.cos(tierT * Math.PI);
+
+      // 六成粒子沿螺旋光带排布，其余填进树身形成体积
+      var garland = Math.random() < 0.62;
+      var ang = t * TURNS * Math.PI * 2 + (Math.random() - 0.5) * (garland ? 0.55 : 6.0);
+      var radiusFactor = garland ? 0.95 + Math.random() * 0.06 : 0.45 + Math.random() * 0.55;
+
+      var r = BASE_R * Math.pow(1 - t, 0.92) * tierScale * radiusFactor;
+      var y = 0.08 + t * (H - 0.08) + (Math.random() - 0.5) * 0.04;
+
+      pos[i * 3] = Math.cos(ang) * r;
+      pos[i * 3 + 1] = y;
+      pos[i * 3 + 2] = Math.sin(ang) * r;
+
+      if (Math.random() < 0.055) {
+        tmp.copy(champagne);
+      } else {
+        tmp.setHSL(0.925 + (Math.random() - 0.5) * 0.04, 0.62 + Math.random() * 0.3, 0.66 + t * 0.12 + Math.random() * 0.08);
+      }
+      colArr[i * 3] = tmp.r;
+      colArr[i * 3 + 1] = tmp.g;
+      colArr[i * 3 + 2] = tmp.b;
+
+      var big = Math.random() < 0.045;
+      sizes[i] = big ? 0.028 + Math.random() * 0.016 : 0.011 + Math.random() * 0.014;
+      phases[i] = Math.random() * Math.PI * 2;
+    }
+
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("aColor", new THREE.BufferAttribute(colArr, 3));
+    g.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+    g.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
+    return g;
+  }
+
+  var treeGeo = buildTree();
+  var coreMat = makePointsMaterial(0.8, 2.7, 1.0);
+  var haloMat = makePointsMaterial(0.1, 1.35, 2.7);
+  var core = new THREE.Points(treeGeo, coreMat);
+  var halo = new THREE.Points(treeGeo, haloMat);
+  halo.renderOrder = 1;
+  core.renderOrder = 2;
+  root.add(halo);
+  root.add(core);
+
+  /* ---------- 树顶星 ---------- */
+  function starTexture() {
+    var s = 128;
+    var cv = document.createElement("canvas");
+    cv.width = s; cv.height = s;
+    var ctx = cv.getContext("2d");
+    var g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.18, "rgba(255,214,232,0.95)");
+    g.addColorStop(0.42, "rgba(255,143,192,0.42)");
+    g.addColorStop(1, "rgba(255,90,150,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, s, s);
+
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineCap = "round";
+    for (var k = 0; k < 4; k++) {
+      ctx.save();
+      ctx.translate(s / 2, s / 2);
+      ctx.rotate((k * Math.PI) / 4);
+      var lg = ctx.createLinearGradient(-s / 2, 0, s / 2, 0);
+      lg.addColorStop(0, "rgba(255,255,255,0)");
+      lg.addColorStop(0.5, "rgba(255,255,255,0.85)");
+      lg.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.strokeStyle = lg;
+      ctx.lineWidth = k === 0 || k === 2 ? 5 : 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-s / 2 + 8, 0);
+      ctx.lineTo(s / 2 - 8, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+    var tex = new THREE.CanvasTexture(cv);
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  var starMat = new THREE.SpriteMaterial({
+    map: starTexture(),
+    color: 0xffffff,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  var star = new THREE.Sprite(starMat);
+  star.position.set(0, H + 0.26, 0);
+  star.scale.set(1.2, 1.2, 1);
+  root.add(star);
+
+  /* ---------- 地面：接触阴影 + 粉色光晕 ---------- */
+  function radialTexture(inner, outer) {
+    var s = 256;
+    var cv = document.createElement("canvas");
+    cv.width = s; cv.height = s;
+    var ctx = cv.getContext("2d");
+    var g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+    g.addColorStop(0, inner);
+    g.addColorStop(1, outer);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, s, s);
+    return new THREE.CanvasTexture(cv);
+  }
+
+  var glow = new THREE.Mesh(
+    new THREE.PlaneGeometry(12, 12),
+    new THREE.MeshBasicMaterial({
+      map: radialTexture("rgba(255,120,170,0.45)", "rgba(255,120,170,0)"),
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.2
+    })
+  );
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.y = 0.004;
+  root.add(glow);
+
+  var contact = new THREE.Mesh(
+    new THREE.PlaneGeometry(5.4, 5.4),
+    new THREE.MeshBasicMaterial({
+      map: radialTexture("rgba(16,2,11,0.8)", "rgba(16,2,11,0)"),
+      transparent: true, depthWrite: false, opacity: 0.85
+    })
+  );
+  contact.rotation.x = -Math.PI / 2;
+  contact.position.y = 0.010;
+  root.add(contact);
+
+  /* ---------- 挂饰与礼物（有实体感的实体，仍用灯光） ---------- */
+  scene.add(new THREE.AmbientLight(0x6b2745, 0.95));
+  var key = new THREE.DirectionalLight(0xffd9e8, 1.25);
+  key.position.set(3.4, 6.2, 4.2);
+  scene.add(key);
+  var rim = new THREE.DirectionalLight(0xff5c9c, 0.55);
+  rim.position.set(-4.2, 3.4, -3.6);
+  scene.add(rim);
+
+  var ornamentMats = [0xff7fb4, 0xffc2da, 0xb03a6a, 0xffe6a8].map(function (hex) {
+    return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.28, metalness: 0.34, emissive: hex, emissiveIntensity: 0.09 });
+  });
+  var ornGeo = new THREE.SphereGeometry(1, 16, 12);
+  var orn = new THREE.Group();
+  for (var o = 0; o < 26; o++) {
+    var ot = Math.pow(Math.random(), 0.75) * 0.94;
+    var oa = ot * TURNS * Math.PI * 2 + Math.random() * 2;
+    var orad = BASE_R * Math.pow(1 - ot, 0.92) * (0.92 + Math.random() * 0.08);
+    var m = new THREE.Mesh(ornGeo, ornamentMats[o % ornamentMats.length]);
+    var sc = 0.055 + Math.random() * 0.045;
+    m.scale.setScalar(sc);
+    m.position.set(Math.cos(oa) * orad, ot * H + 0.04, Math.sin(oa) * orad);
+    orn.add(m);
+  }
+  root.add(orn);
+
+  var giftMats = [
+    new THREE.MeshStandardMaterial({ color: 0x8d254d, roughness: 0.52, metalness: 0.12 }),
+    new THREE.MeshStandardMaterial({ color: 0xff88b8, roughness: 0.44, metalness: 0.16 }),
+    new THREE.MeshStandardMaterial({ color: 0x5e1738, roughness: 0.58, metalness: 0.1 })
+  ];
+  var ribbonMat = new THREE.MeshStandardMaterial({ color: 0xffe0ec, roughness: 0.34, metalness: 0.18, emissive: 0xff9dc4, emissiveIntensity: 0.12 });
+  var gifts = [
+    { p: [1.32, 0.2, 0.78], s: [0.56, 0.42, 0.5], rot: 0.42 },
+    { p: [-1.12, 0.15, -0.72], s: [0.48, 0.34, 0.44], rot: -0.3 },
+    { p: [0.3, 0.12, 1.45], s: [0.62, 0.28, 0.54], rot: 0.12 }
+  ];
+  gifts.forEach(function (g, i) {
+    var box = new THREE.Mesh(new THREE.BoxGeometry(g.s[0], g.s[1], g.s[2]), giftMats[i % giftMats.length]);
+    box.position.set(g.p[0], g.s[1] / 2, g.p[2]);
+    box.rotation.y = g.rot;
+    root.add(box);
+    var r1 = new THREE.Mesh(new THREE.BoxGeometry(g.s[0] * 1.012, g.s[1] * 1.02, g.s[2] * 0.13), ribbonMat);
+    r1.position.copy(box.position);
+    r1.rotation.y = g.rot;
+    root.add(r1);
+    var r2 = new THREE.Mesh(new THREE.BoxGeometry(g.s[0] * 0.13, g.s[1] * 1.02, g.s[2] * 1.012), ribbonMat);
+    r2.position.copy(box.position);
+    r2.rotation.y = g.rot;
+    root.add(r2);
+  });
+
+  /* ---------- 飘落的光尘 ---------- */
+  var SNOW = isNarrow ? 380 : 720;
+  function buildSnow() {
+    var pos = new Float32Array(SNOW * 3);
+    var col = new Float32Array(SNOW * 3);
+    var sizes = new Float32Array(SNOW);
+    var phases = new Float32Array(SNOW);
+    var speeds = new Float32Array(SNOW);
+    var tmp = new THREE.Color();
+    for (var i = 0; i < SNOW; i++) {
+      var a = Math.random() * Math.PI * 2;
+      var rr = 1.2 + Math.random() * 4.4;
+      pos[i * 3] = Math.cos(a) * rr;
+      pos[i * 3 + 1] = Math.random() * 9.2;
+      pos[i * 3 + 2] = Math.sin(a) * rr;
+      tmp.setHSL(0.93 + Math.random() * 0.03, 0.4 + Math.random() * 0.3, 0.84 + Math.random() * 0.1);
+      col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
+      sizes[i] = 0.012 + Math.random() * 0.014;
+      phases[i] = Math.random() * Math.PI * 2;
+      speeds[i] = 0.06 + Math.random() * 0.13;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("aColor", new THREE.BufferAttribute(col, 3));
+    g.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+    g.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
+    g.setAttribute("aSpeed", new THREE.BufferAttribute(speeds, 1));
+    return g;
+  }
+
+  var snowMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uPointFactor: { value: 1000 },
+      uOpacity: { value: 0.62 }
+    },
+    vertexShader: [
+      "attribute float aSize;",
+      "attribute vec3 aColor;",
+      "attribute float aPhase;",
+      "attribute float aSpeed;",
+      "uniform float uTime;",
+      "uniform float uPointFactor;",
+      "varying vec3 vColor;",
+      "varying float vTw;",
+      "void main(){",
+      "  vec3 p = position;",
+      "  p.y = mod(position.y - uTime * aSpeed, 9.2);",
+      "  p.x += sin(uTime * 0.22 + aPhase) * 0.34;",
+      "  p.z += cos(uTime * 0.18 + aPhase) * 0.3;",
+      "  vColor = aColor;",
+      "  vTw = 0.55 + 0.45 * sin(uTime * 0.9 + aPhase);",
+      "  vec4 mv = modelViewMatrix * vec4(p, 1.0);",
+      "  gl_PointSize = aSize * uPointFactor / max(0.001, -mv.z);",
+      "  gl_Position = projectionMatrix * mv;",
+      "}"
+    ].join("\n"),
+    fragmentShader: FS,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  snowMat.uniforms.uFalloff = { value: 1.2 };
+  var snow = new THREE.Points(buildSnow(), snowMat);
+  snow.renderOrder = 0;
+  scene.add(snow);
+
+  /* ---------- 构图与尺寸 ---------- */
+  function resize() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+
+    // 宽屏把树放到画面右侧给标题留版面；竖屏缩小让出顶部；按视口高度反推相机距离，保证任何比例都成立
+    var wideLayout = w > 900 || h < 561;
+    var fit = wideLayout ? 0.7 : 0.56;
+    var dist = (H / fit) / (2 * Math.tan((FOV * Math.PI) / 360));
+    camera.position.set(0, wideLayout ? 2.78 : 3.2, dist);
+    lookAt.set(wideLayout ? -1.42 : 0, wideLayout ? 2.5 : 4.25, 0);
+    camera.lookAt(lookAt);
+
+    var pf = h / (2 * Math.tan((FOV * Math.PI) / 360));
+    coreMat.uniforms.uPointFactor.value = pf;
+    haloMat.uniforms.uPointFactor.value = pf;
+    snowMat.uniforms.uPointFactor.value = pf;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  /* ---------- 旋转、拖动与光带 ---------- */
+  var spinning = !reduced;
+  var autoSpeed = reduced ? 0.012 : 0.135;
+  var yaw = 0.55;
+  var targetYaw = yaw;
+  var dragActive = false;
+  var lastX = 0;
+  var lastY = 0;
+  var idleUntil = 0;
+  var tilt = 0;
+  var targetTilt = 0;
+
+  canvas.addEventListener("pointerdown", function (e) {
+    dragActive = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+    canvas.style.cursor = "grabbing";
+  });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!dragActive) return;
+    var dx = e.clientX - lastX;
+    var dy = e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    targetYaw += dx * 0.0055;
+    targetTilt = Math.max(-0.16, Math.min(0.16, targetTilt + dy * 0.0012));
+    idleUntil = performance.now() + 2600;
+  });
+  function endDrag(e) {
+    if (!dragActive) return;
+    dragActive = false;
+    canvas.style.cursor = "grab";
+    idleUntil = performance.now() + 2600;
+    if (canvas.hasPointerCapture && e && e.pointerId !== undefined) {
+      try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+  }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+  canvas.style.cursor = "grab";
+
+  var toggle = document.getElementById("toggle");
+  var stateLabel = document.getElementById("state");
+  var iconPath = document.getElementById("icon-path");
+  function paintToggle() {
+    var paused = !spinning;
+    iconPath.setAttribute("d", paused ? "M8 5l10 7-10 7z" : "M8 5h3v14H8zM13 5h3v14h-3z");
+    toggle.setAttribute("aria-label", paused ? "继续旋转" : "暂停旋转");
+    toggle.setAttribute("aria-pressed", paused ? "true" : "false");
+    stateLabel.textContent = paused ? "已暂停" : "自动旋转中";
+  }
+  toggle.addEventListener("click", function () {
+    spinning = !spinning;
+    paintToggle();
+  });
+  paintToggle();
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) return;
+    last = performance.now();
+  });
+
+  /* ---------- 渲染循环 ---------- */
+  var clock = new THREE.Clock();
+  var last = performance.now();
+  var elapsed = 0;
+
+  function frame() {
+    requestAnimationFrame(frame);
+    var now = performance.now();
+    var dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    if (document.hidden) return;
+    elapsed += dt;
+
+    if (spinning && !dragActive && now > idleUntil) {
+      targetYaw += autoSpeed * dt;
+    }
+    yaw += (targetYaw - yaw) * Math.min(1, dt * 7);
+    tilt += (targetTilt - tilt) * Math.min(1, dt * 6);
+    root.rotation.y = yaw;
+    root.rotation.x = tilt;
+
+    // 每转一圈，亮光自树底扫到树顶
+    var turn = ((yaw / (Math.PI * 2)) % 1 + 1) % 1;
+    var sweep = reduced ? -100 : -0.5 + turn * (H + 1.1);
+    coreMat.uniforms.uSweep.value = sweep;
+    haloMat.uniforms.uSweep.value = sweep;
+
+    coreMat.uniforms.uTime.value = elapsed;
+    haloMat.uniforms.uTime.value = elapsed;
+    snowMat.uniforms.uTime.value = elapsed;
+
+    var pulse = 1 + 0.09 * Math.sin(elapsed * 1.1);
+    star.scale.set(1.2 * pulse, 1.2 * pulse, 1);
+    starMat.opacity = 0.78 + 0.16 * Math.sin(elapsed * 0.85 + 0.6);
+    glow.material.opacity = 0.18 + 0.05 * Math.sin(elapsed * 0.7);
+
+    renderer.render(scene, camera);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>
